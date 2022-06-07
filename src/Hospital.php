@@ -2,6 +2,7 @@
 
 namespace App;
 
+use App\Factory\DiseaseFactory;
 use App\Models\Disease;
 use App\Models\Doctor\Doctor;
 use App\Models\Patient;
@@ -14,21 +15,15 @@ class Hospital
 {
     /** @var mixed  */
     private array $config;
-
     /** @var Doctor[]  */
     private array $doctors;
-
     /** @var int[] */
     private array $operationRooms;
-
     /** @var Patient[]  */
     private array $waitingList = [];
-
     /** @var Disease[] */
     private array $diseases;
-
     private OutputInterface $output;
-
     private Doctor $triageDoctor;
 
     public function __construct()
@@ -41,10 +36,10 @@ class Hospital
      */
     public function bootstrap(): Hospital
     {
-        $this
+        return $this
+            ->loadDiseasesThatCanBeTreatedInThisHospital()
             ->loadDoctors()
             ->loadTriageDoctor()
-            ->loadDiseasesThatCanBeTreatedInThisHospital()
             ->loadOperationRooms()
             ->loadOutput();
     }
@@ -57,6 +52,8 @@ class Hospital
         }
 
         $patientTreatCounter = 0;
+        $patientDeadCounter = 0;
+        $patientNotTreated = 0;
 
         foreach ($this->waitingList as $patient) {
             if (!$patient->haveInsurance()) {
@@ -64,16 +61,18 @@ class Hospital
                     'Patient %s doesn\'t have insurance and will not be processed.',
                     $patient->getFullName()
                 ));
+                $patientNotTreated++;
                 continue;
             }
 
             $this->triageDoctor->consult($patient, $this->diseases);
 
-            if (is_null($patient->getDiagnosis()) || is_null($patient->getAssignedDoctor())) {
+            if (is_null($patient->getDiagnosis())) {
                 $this->output->write(sprintf(
                     'Patient %s cannot be diagnosed or the disease cannot be treated here.',
                     $patient->getFullName()
                 ));
+                $patientNotTreated++;
                 continue;
             }
 
@@ -82,6 +81,7 @@ class Hospital
                     'Patient %s is dead to to high level of pain.',
                     $patient->getFullName()
                 ));
+                $patientDeadCounter++;
                 continue;
             }
 
@@ -94,28 +94,42 @@ class Hospital
             if ($surgery->isASuccess()) {
                 $patientTreatCounter++;
                 $this->output->write(sprintf(
-                    'Stunning result !!! Doctor %s treat patient %s from disease %s and have %d success surgery.',
+                    'Stunning result !!! Doctor %s treat patient %s from disease %s and have %d success surgeries.',
                     $patient->getAssignedDoctor()->getName(),
                     $patient->getFullName(),
                     $patient->getDiagnosis()->getName(),
                     $patient->getAssignedDoctor()->getPatientsTreated()
                 ));
             } else {
+                $patientDeadCounter++;
                 $this->output->write(sprintf(
                     'Patient %s died in the surgery.',
                     $patient->getFullName()
                 ));
             }
         }
+
+        $this->output->write("Final results for queue --- \n Treated: $patientTreatCounter \n Dead: $patientDeadCounter \n Not treated: $patientNotTreated");
     }
 
     protected function loadDoctors(): Hospital
     {
+        $doctor = new Doctor();
+
+        foreach ($this->config['doctors'] as $doctorData) {
+            $doctor
+                ->setName($doctorData['name'])
+                ->setPatientsTreated($doctorData['patientsTreated'])
+                ->setKnowHowToTreat($doctor->getKnowledgeOfDiseases($this->diseases, $doctorData['knowledge']));
+            $this->doctors[] = $doctor;
+        }
+
         return $this;
     }
 
     protected function loadOperationRooms(): Hospital
     {
+        $this->operationRooms = $this->config['operationRooms'];
         return $this;
     }
 
@@ -144,25 +158,17 @@ class Hospital
 
     public function loadDiseasesThatCanBeTreatedInThisHospital(): Hospital
     {
-        $diseases = $this->config['diseases'];
+        foreach ($this->config['diseases'] as $diseaseData) {
+            $diseases[] = DiseaseFactory::create($diseaseData);
+        }
 
-        $this->diseases = [];
-
+        $this->diseases = $diseases ?? [];
         return $this;
     }
 
     public function loadTriageDoctor(): Hospital
     {
-        $this->triageDoctor = new Doctor();
-        return $this;
-    }
-
-    /**
-     * @param int[] $operationRooms
-     */
-    public function setOperationRooms(array $operationRooms): Hospital
-    {
-        $this->operationRooms = $operationRooms;
+        $this->triageDoctor = $this->doctors[array_rand($this->doctors)];
         return $this;
     }
 
@@ -175,37 +181,9 @@ class Hospital
         return $this;
     }
 
-    /**
-     * @return OutputInterface
-     */
-    public function getOutput(): OutputInterface
-    {
-        return $this->output;
-    }
-
-    /**
-     * @param OutputInterface $output
-     */
     public function setOutput(OutputInterface $output): Hospital
     {
         $this->output = $output;
-        return $this;
-    }
-
-    /**
-     * @return Doctor[]
-     */
-    public function getDoctors(): array
-    {
-        return $this->doctors;
-    }
-
-    /**
-     * @param Doctor[] $doctors
-     */
-    public function setDoctors(array $doctors): Hospital
-    {
-        $this->doctors = $doctors;
         return $this;
     }
 

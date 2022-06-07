@@ -7,29 +7,32 @@ use App\Models\Patient;
 
 class Doctor implements ConsultInterface
 {
+    public const TYPE_NOVICE = 'novice';
+    public const TYPE_MASTER = 'master';
+
     private string $name;
     private int $patientsTreated = 0;
-    private string $experienceLevel;
+    private string $experienceLevel = self::TYPE_NOVICE;
     /** @var Disease[]  */
     private array $knowHowToTreat;
 
+    /**
+     * @param Disease[] $diseases
+     */
     public function consult(Patient $patient, array $diseases): void
     {
-        $symptoms = $patient->getSymptoms();
-        $disease = Disease::createFromSymptoms($symptoms);
-
-        if (!is_null($disease)) {
-            $patient->setDiagnosis($disease);
+        foreach ($diseases as $disease) {
+            if ($disease->getSymptom() === $patient->getSymptom()) {
+                $patient->setDiagnosis($disease);
+            }
         }
     }
 
     public function increasePatientTreat(): void
     {
-        $this->patientsTreated++;
+        $numberOfPatientsTreated = $this->patientsTreated + 1;
 
-        if ($this->isMaster()) {
-            $this->setExperienceLevel('Master');
-        }
+        $this->setPatientsTreated($numberOfPatientsTreated);
     }
 
     public function canTreat(Disease $disease): bool
@@ -44,7 +47,7 @@ class Doctor implements ConsultInterface
 
     public function isMaster(): bool
     {
-        return $this->experienceLevel !== 'Master' && $this->patientsTreated > 20;
+        return $this->experienceLevel === self::TYPE_MASTER;
     }
 
     public function setExperienceLevel(string $experienceLevel): Doctor
@@ -71,5 +74,33 @@ class Doctor implements ConsultInterface
     {
         $this->knowHowToTreat = $knowHowToTreat;
         return $this;
+    }
+
+    public function setPatientsTreated(int $patientsTreated): Doctor
+    {
+        $this->patientsTreated = $patientsTreated;
+        if ($patientsTreated > 20) {
+            $this->experienceLevel = self::TYPE_MASTER;
+        }
+        return $this;
+    }
+
+    /**
+     * @param Disease[] $diseases
+     * @param array $knowledge
+     * @return Disease[]
+     */
+    public function getKnowledgeOfDiseases(array $diseases, array $knowledge): array
+    {
+        $knownDiseases = [];
+        foreach ($diseases as $disease) {
+            foreach ($knowledge as $diseaseName) {
+                if ($disease->getName() === $diseaseName) {
+                    $knownDiseases[] = $disease;
+                }
+            }
+        }
+
+        return $knownDiseases;
     }
 }

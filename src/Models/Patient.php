@@ -8,7 +8,7 @@ class Patient
 {
     private string $firstName;
     private string $lastName;
-    private array $symptoms;
+    private string $symptom;
     private int $painLevel;
     private bool $haveInsurance;
     private Disease $diagnosis;
@@ -36,14 +36,14 @@ class Patient
         return $this;
     }
 
-    public function getSymptoms(): array
+    public function getSymptom(): string
     {
-        return $this->symptoms;
+        return $this->symptom;
     }
 
-    public function setSymptoms(array $symptoms): Patient
+    public function setSymptoms(string $symptom): Patient
     {
-        $this->symptoms = $symptoms;
+        $this->symptom = $symptom;
         return $this;
     }
 
