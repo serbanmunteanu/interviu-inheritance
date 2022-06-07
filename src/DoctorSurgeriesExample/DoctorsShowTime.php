@@ -1,6 +1,5 @@
 <?php
 
-require_once __DIR__  . '/../../vendor/autoload.php';
 
 use App\DoctorSurgeriesExample\Doctors\BonesDoctor;
 use App\DoctorSurgeriesExample\Doctors\FamilyDoctor;
