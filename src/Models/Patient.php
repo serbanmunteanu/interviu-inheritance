@@ -6,34 +6,16 @@ use App\Models\Doctor\Doctor;
 
 class Patient
 {
-    private string $firstName;
-    private string $lastName;
-    private string $symptom;
-    private int $painLevel;
-    private bool $haveInsurance;
-    private Disease $diagnosis;
-    private Doctor $assignedDoctor;
+    private ?Disease $diagnosis;
+    private ?Doctor $assignedDoctor;
 
-    public function getFirstName(): string
-    {
-        return $this->firstName;
-    }
-
-    public function setFirstName(string $firstName): Patient
-    {
-        $this->firstName = $firstName;
-        return $this;
-    }
-
-    public function getLastName(): string
-    {
-        return $this->lastName;
-    }
-
-    public function setLastName(string $lastName): Patient
-    {
-        $this->lastName = $lastName;
-        return $this;
+    public function __construct(
+        private string $firstName,
+        private string $lastName,
+        private string $symptom,
+        private int $painLevel,
+        private bool $haveInsurance,
+    ){
     }
 
     public function getSymptom(): string
@@ -41,48 +23,25 @@ class Patient
         return $this->symptom;
     }
 
-    public function setSymptoms(string $symptom): Patient
-    {
-        $this->symptom = $symptom;
-        return $this;
-    }
-
-    public function getPainLevel(): int
-    {
-        return $this->painLevel;
-    }
-
-    public function setPainLevel(int $painLevel): Patient
-    {
-        $this->painLevel = $painLevel;
-        return $this;
-    }
-
     public function haveInsurance(): bool
     {
         return $this->haveInsurance;
     }
 
-    public function setHaveInsurance(bool $haveInsurance): Patient
+    public function getDiagnosis(): ?Disease
     {
-        $this->haveInsurance = $haveInsurance;
-        return $this;
+        return $this->diagnosis ?? null;
     }
 
-    public function getDiagnosis(): Disease
-    {
-        return $this->diagnosis;
-    }
-
-    public function setDiagnosis(Disease $diagnosis): Patient
+    public function setDiagnosis(?Disease $diagnosis): Patient
     {
         $this->diagnosis = $diagnosis;
         return $this;
     }
 
-    public function getAssignedDoctor(): Doctor
+    public function getAssignedDoctor(): ?Doctor
     {
-        return $this->assignedDoctor;
+        return $this->assignedDoctor ?? null;
     }
 
     public function setAssignedDoctor(Doctor $assignedDoctor): Patient
@@ -98,7 +57,7 @@ class Patient
 
     public function getFullName(): string
     {
-        return $this->firstName . $this->lastName;
+        return $this->firstName . ' ' . $this->lastName;
     }
 
     public function canDie(): bool

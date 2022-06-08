@@ -1,3 +1,21 @@
+# Developer Updates:
+
+- Application inspired by serial the "The good doctor" 
+- The logic inside create a new Hospital that can process a list of Patient with symptoms
+- In Hospital only patient that have insurance can be treated
+- If no operation room is found and the patient is not lucky he will die
+- If no doctor have knowledge about a disease the patient will be sent to another hospital
+- The doctors can be assigned only for the diseases known by they
+
+Some features:
+- Can switch between cli / log by config (.log file in Output/Logs/history.log )
+- Can add easily diseases and doctors by config ( simulating a database )
+- Use composition and Static factory method + Adapters Pattern for logging
+
+Final thoughts:
+- The original assignment was too easy, so I implemented something challenging to show my skills and knowledge
+
+
 <!-- GETTING STARTED -->
 ## About the project
 This a small example on how inheritance affects our doctors professions by giving them

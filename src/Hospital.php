@@ -37,11 +37,11 @@ class Hospital
     public function bootstrap(): Hospital
     {
         return $this
+            ->loadOutput()
             ->loadDiseasesThatCanBeTreatedInThisHospital()
             ->loadDoctors()
             ->loadTriageDoctor()
-            ->loadOperationRooms()
-            ->loadOutput();
+            ->loadOperationRooms();
     }
 
     public function process(): void
@@ -76,7 +76,7 @@ class Hospital
                 continue;
             }
 
-            if (empty($this->operationRooms) && $patient->canDie()) {
+            if (empty($this->operationRooms) || $patient->canDie()) {
                 $this->output->write(sprintf(
                     'Patient %s is dead to to high level of pain.',
                     $patient->getFullName()
@@ -114,16 +114,15 @@ class Hospital
 
     protected function loadDoctors(): Hospital
     {
-        $doctor = new Doctor();
-
+        $doctors = [];
         foreach ($this->config['doctors'] as $doctorData) {
-            $doctor
+            $doctors[] = (new Doctor())
                 ->setName($doctorData['name'])
                 ->setPatientsTreated($doctorData['patientsTreated'])
-                ->setKnowHowToTreat($doctor->getKnowledgeOfDiseases($this->diseases, $doctorData['knowledge']));
-            $this->doctors[] = $doctor;
+                ->setKnowHowToTreat(Doctor::getKnowledgeOfDiseases($this->diseases, $doctorData['knowledge']));
         }
 
+        $this->doctors = $doctors;
         return $this;
     }
 
@@ -142,31 +141,31 @@ class Hospital
             throw new \Exception('Invalid configuration output');
         }
 
-        switch ($this->config['output']) {
-            case 'cli':
-                $this->setOutput(new CliOutput());
-                break;
-            case 'log':
-                $this->setOutput(new LogOutput());
-                break;
-            default:
-                throw new \Exception('Adapter not supported');
-        }
+        $this->output = match ($this->config['output']) {
+            'cli' => new CliOutput(),
+            'log' => new LogOutput(),
+            default => throw new \Exception('Adapter not supported'),
+        };
 
         return $this;
     }
 
-    public function loadDiseasesThatCanBeTreatedInThisHospital(): Hospital
+    protected function loadDiseasesThatCanBeTreatedInThisHospital(): Hospital
     {
+        $diseases = [];
         foreach ($this->config['diseases'] as $diseaseData) {
-            $diseases[] = DiseaseFactory::create($diseaseData);
+            $diseases[] = DiseaseFactory::create(
+                $diseaseData['name'],
+                $diseaseData['symptom'],
+                $diseaseData['chanceToCure']
+            );
         }
 
-        $this->diseases = $diseases ?? [];
+        $this->diseases = $diseases;
         return $this;
     }
 
-    public function loadTriageDoctor(): Hospital
+    protected function loadTriageDoctor(): Hospital
     {
         $this->triageDoctor = $this->doctors[array_rand($this->doctors)];
         return $this;
@@ -181,13 +180,7 @@ class Hospital
         return $this;
     }
 
-    public function setOutput(OutputInterface $output): Hospital
-    {
-        $this->output = $output;
-        return $this;
-    }
-
-    public function assignDoctorForPatient(Patient $patient): void
+    protected function assignDoctorForPatient(Patient $patient): void
     {
         foreach ($this->doctors as $doctor) {
             if ($doctor->canTreat($patient->getDiagnosis())) {

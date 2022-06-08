@@ -90,7 +90,7 @@ class Doctor implements ConsultInterface
      * @param array $knowledge
      * @return Disease[]
      */
-    public function getKnowledgeOfDiseases(array $diseases, array $knowledge): array
+    public static function getKnowledgeOfDiseases(array $diseases, array $knowledge): array
     {
         $knownDiseases = [];
         foreach ($diseases as $disease) {
@@ -102,5 +102,13 @@ class Doctor implements ConsultInterface
         }
 
         return $knownDiseases;
+    }
+
+    /**
+     * @return Disease[]
+     */
+    public function getKnowHowToTreat(): array
+    {
+        return $this->knowHowToTreat;
     }
 }

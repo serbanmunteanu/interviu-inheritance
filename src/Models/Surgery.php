@@ -28,6 +28,17 @@ class Surgery
             $this->patient->getAssignedDoctor()->getName()
         ));
 
+        if (!$this->patient->getAssignedDoctor()->canTreat($this->patient->getDiagnosis())) {
+            $this->output->write(sprintf(
+                'Doctor assigned wrong. Doctor %s cannot do the surgery for disease %s for patient %s',
+                $this->patient->getAssignedDoctor()->getName(),
+                $this->patient->getDiagnosis()->getName(),
+                $this->patient->getFullName()
+            ));
+            $this->setSurgerySucceeded(false);
+            return;
+        }
+
         if ($this->patient->getDiagnosis()->getChanceToCure() < 50
         && !$this->patient->getAssignedDoctor()->isMaster()) {
             $this->setSurgerySucceeded(false);
